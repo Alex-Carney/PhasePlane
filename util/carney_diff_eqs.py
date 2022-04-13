@@ -17,6 +17,34 @@ def runge_kutta(equation, domain: ndarray, seed, step_size):
         output[i] = output[i - 1] + ((1 / 6) * (c1 + 2 * c2 + 2 * c3 + c4))
     return output
 
+# def runge_kutta_two_ways(equation, xmin, xmax, seed, step_size):
+#
+#     forward_domain_length: int = np.abs(xmax)/step_size
+#     backwards_domain_length: int = np.abs(xmin)/step_size
+#
+#     out_forward = np.zeros(forward_domain_length)
+#     out_backward = np.zeros(backwards_domain_length-1)
+#
+#     out_forward[0] = seed
+#
+#     step_size_back = -step_size
+#
+#     for i in range(1, max(out_forward, out_backward)):
+#         if(i < forward_domain_length):
+#             c1f = step_size * equation(domain[i - 1], out_forward[i - 1])
+#             c2f = step_size * equation(domain[i - 1] + .5 * step_size, out_forward[i - 1] + .5 * c1f)
+#             c3f = step_size * equation(domain[i - 1] + .5 * step_size, out_forward[i - 1] + .5 * c2f)
+#             c4f = step_size * equation(domain[i - 1] + step_size, out_forward[i - 1] + c3f)
+#             out_forward[i] = out_forward[i - 1] + ((1 / 6) * (c1f + 2 * c2f + 2 * c3f + c4f))
+#         if(i < backwards_domain_length):
+#             c1b = step_size_back * equation(domain[i - 1], out_backward[i - 1])
+#             c2b = step_size_back * equation(domain[i - 1] + .5 * step_size_back, out_backward[i - 1] + .5 * c1b)
+#             c3b = step_size_back * equation(domain[i - 1] + .5 * step_size_back, out_backward[i - 1] + .5 * c2b)
+#             c4b = step_size_back * equation(domain[i - 1] + step_size_back, out_backward[i - 1] + c3b)
+#             out_backward[i] = out_backward[i - 1] + ((1 / 6) * (c1b + 2 * c2b + 2 * c3b + c4b))
+#
+#     return output
+
 
 def runge_kutta_any_order(equation_system, time_vector: ndarray, seeds: ndarray, step_size):
     """
