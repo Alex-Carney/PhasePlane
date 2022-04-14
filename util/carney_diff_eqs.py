@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy import ndarray
 
+import datetime
+
 
 
 def runge_kutta(equation, domain: ndarray, seed, step_size):
@@ -62,16 +64,23 @@ def runge_kutta_any_order(equation_system, time_vector: ndarray, seeds: ndarray,
     order = len(equation_system)
     output: ndarray = np.zeros((order, domain_length))
     output[:, 0] = seeds
-    coefficients: ndarray = np.zeros((4, order))
+    coefficients: ndarray = np.zeros((4, order), dtype=np.float64)
 
     # For each time step (i), we do a few things:
     # For each equation in the system (f), we need to generate the required coefficients. The arguments factory
     # handles this, and populates the coefficients array for use with this current time step.
     # We start at 1 because index 0 are the seeds
+    # for i in range(1, domain_length):
+    #     for j, f in enumerate(equation_system):
+    #         for c_num in range(4):
+    #             args = __function_arguments_factory(c_num, order, output, i, coefficients[:, j], time_vector, step_size)
+    #             coefficients[c_num][j] = step_size * f(*args)
+    #         output[j, i] = output[j, i - 1] + ((1 / 6) * (coefficients[0][j] + 2 * coefficients[1][j] + 2 * coefficients[2][j] + coefficients[3][j]))
+    # return output
     for i in range(1, domain_length):
         for j, f in enumerate(equation_system):
             for c_num in range(4):
-                args = __function_arguments_factory(c_num, order, output, i, coefficients[:, j], time_vector, step_size)
+                args = __function_arguments_factory(c_num, order, output, i, coefficients, time_vector, step_size)
                 coefficients[c_num][j] = step_size * f(*args)
             output[j, i] = output[j, i - 1] + ((1 / 6) * (coefficients[0][j] + 2 * coefficients[1][j] + 2 * coefficients[2][j] + coefficients[3][j]))
     return output
@@ -87,26 +96,35 @@ def __function_arguments_factory(c_num: int, order: int, output: ndarray, i: int
     :param required_coeff: The array of current coefficients being built up
     :return:
     """
-    args = []
+    # args = np.zeros(order + 1)
+    args = [0] * (order + 1)
     # Add all dependent variables into the arguments list. From the table of coefficients
     for o in range(order):
         if c_num == 0:
-            args.append(output[o, i - 1])
+            args[o] = (output[o, i - 1])
+            # args.append((output[o, i - 1]))
         elif c_num == 1:
-            args.append(output[o, i - 1] + .5 * required_coeff_array[o])
+            args[o] = (output[o, i - 1] + .5 * required_coeff_array[0, o])
+            # args.append((output[o, i - 1] + .5 * required_coeff_array[0, o]))
         elif c_num == 2:
-            args.append(output[o, i - 1] + .5 * required_coeff_array[o])
+            args[o] = (output[o, i - 1] + .5 * required_coeff_array[1, o])
+            # args.append((output[o, i - 1] + .5 * required_coeff_array[1, o]))
         elif c_num == 3:
-            args.append(output[o, i - 1] + required_coeff_array[o])
+            args[o] = (output[o, i - 1] + required_coeff_array[2, o])
+            # args.append((output[o, i - 1] + required_coeff_array[2, o]))
     # Add all the independent variables (usually time) into the arguments list
     if c_num == 0:
-        args.append(time_vector[i - 1])
+        args[-1] = (time_vector[i - 1])
+        # args.append((time_vector[i - 1]))
     elif c_num == 1:
-        args.append(time_vector[i - 1] + .5 * step_size)
+        args[-1] = (time_vector[i - 1] + .5 * step_size)
+        # args.append((time_vector[i - 1] + .5 * step_size))
     elif c_num == 2:
-        args.append(time_vector[i - 1] + .5 * step_size)
+        args[-1] = (time_vector[i - 1] + .5 * step_size)
+        # args.append((time_vector[i - 1] + .5 * step_size))
     elif c_num == 3:
-        args.append(time_vector[i - 1] + step_size)
+        args[-1] = (time_vector[i - 1] + step_size)
+        # args.append((time_vector[i - 1] + step_size))
 
     return args
 
@@ -196,34 +214,67 @@ def hard_code(pos_eqn, vel_eqn, domain, x_seed, v_seed, step_size):
 
 
 if __name__ == '__main__':
-    equation = lambda x, y: -y
 
-    z = .25
-    w0 = 10.917
+    t_step = .1
+    h = .1
+    time = np.r_[0:10:t_step]
 
-    time_step = (1 / w0) * .001
-    domain = np.r_[0:3: time_step]
-    actual = 1 * np.exp(-domain)
+    dxdt1 = lambda x, t: t
 
-    equation1 = lambda x, v: (-2 * z * w0 * v) - (x * w0 ** 2)
-    equation2 = lambda x, v: v
 
-    equation_system = np.array([equation2, equation1])
+    dxdt = lambda x, y, t: -y
+    dydt = lambda x, y, t: x
 
-    # guessed_underdamped = runge_kutta_3(equation_system, domain, np.array([0, 0]), .1)
+    eqn_system = np.array([dxdt, dydt])
 
-    # guessed_underdamped, _ = hard_code(equation2, equation1, domain, 5, 0, .1)
+    initial = np.array([1, 1])
 
-    # guessed_underdamped = runge_kutta_3(equation_system, domain, np.array([5, 0]), .1)
-    guessed_underdamped = runge_kutta_2(equation_system, domain, np.array([1, 0]), time_step)
-    # guessed_underdamped = runge_kutta_3([equation1, equation2], domain, np.array([5, 0]), .1)
-    # better_guess = runge_kutta_3(equation_system, domain, np.array([1, 0]), time_step)
+    #outExact = runge_kutta_second(eqn_system, time, initial, h)
 
-    A = 5
-    equation1_td = lambda x, v, t: (-2 * z * w0 * v) - (x * w0 ** 2) + (A * t)
-    equation2_td = lambda x, v, t: v
+    begin_time = datetime.datetime.now()
+    outTest = runge_kutta_any_order(eqn_system, time, initial, h)
+    print("ELAPSED TIME FOR UPGRADE " + str(datetime.datetime.now() - begin_time))
 
-    new_attempt_guess = runge_kutta_second(np.array([equation2_td, equation1_td]), domain, np.array([1, 0]), time_step)
+    begin_time = datetime.datetime.now()
+    outTestTwo = runge_kutta_second(eqn_system, time, initial, h)
+    print("ELAPSED TIME FOR HARD CODE " + str(datetime.datetime.now() - begin_time))
+    # plt.plot(outExact[0, :], outExact[1, :])
+    plt.plot(outTest[0, :], outTest[1, :])
+    plt.plot(outTestTwo[0, :], outTestTwo[1, :])
+    plt.show()
+
+
+
+
+
+    # equation = lambda x, y: -y
+    #
+    # z = .25
+    # w0 = 10.917
+    #
+    # time_step = (1 / w0) * .001
+    # domain = np.r_[0:3: time_step]
+    # actual = 1 * np.exp(-domain)
+    #
+    # equation1 = lambda x, v: (-2 * z * w0 * v) - (x * w0 ** 2)
+    # equation2 = lambda x, v: v
+    #
+    # equation_system = np.array([equation2, equation1])
+    #
+    # # guessed_underdamped = runge_kutta_3(equation_system, domain, np.array([0, 0]), .1)
+    #
+    # # guessed_underdamped, _ = hard_code(equation2, equation1, domain, 5, 0, .1)
+    #
+    # # guessed_underdamped = runge_kutta_3(equation_system, domain, np.array([5, 0]), .1)
+    # guessed_underdamped = runge_kutta_2(equation_system, domain, np.array([1, 0]), time_step)
+    # # guessed_underdamped = runge_kutta_3([equation1, equation2], domain, np.array([5, 0]), .1)
+    # # better_guess = runge_kutta_3(equation_system, domain, np.array([1, 0]), time_step)
+    #
+    # A = 5
+    # equation1_td = lambda x, v, t: (-2 * z * w0 * v) - (x * w0 ** 2) + (A * t)
+    # equation2_td = lambda x, v, t: v
+    #
+    # new_attempt_guess = runge_kutta_second(np.array([equation2_td, equation1_td]), domain, np.array([1, 0]), time_step)
 
     # THIRD ORDER DIFF EQ TEST WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
     eqn1 = lambda x, v, a, t: v
@@ -236,22 +287,3 @@ if __name__ == '__main__':
     plt.plot(time, np.exp(time))
     plt.plot(time, bruh[0, :], 'r--')
     plt.show()
-
-    #holy_crap = runge_kutta_any_order(np.array([equation2_td, equation1_td]), domain, np.array([1, 0]), time_step)
-
-    # print(guessed_underdamped)
-    # plt.plot(domain, guessed_underdamped[0, :], 'r')
-    # #plt.plot(domain, holy_crap[0, :], 'b--')
-    # # plt.plot(domain, new_attempt_guess[0, :], 'o')
-    # # plt.plot(domain, better_guess[0, :], 'b--')
-    # plt.show()
-
-    # plt.plot(domain, guessed_underdamped[0, :])
-
-    # guessed = runge_kutta(equation, domain, 1, time_step)
-
-    #
-    # plt.plot(domain, actual)
-    # plt.plot(domain, guessed, 'r:')
-    # plt.plot(domain, (actual - guessed) / actual)
-    # plt.show()

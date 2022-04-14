@@ -218,7 +218,7 @@ def app():
     # Setup screen
     col1, col2 = st.columns([1, 2])
     st.session_state.col2 = col2
-    col1.header("Enter System of Equations")
+    col1.header("Enter single ODE")
     col2.header("Output")
 
     # Setup widgets ------------------------------------------
