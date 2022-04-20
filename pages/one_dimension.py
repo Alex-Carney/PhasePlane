@@ -48,18 +48,23 @@ def app(flag):
         then the plot scaffold is created. Finally, the plot is populated with points, then
         drawn
         """
-        diff_eqn = generate_functions_from_input(st.session_state.dydx)
-        x_partition, y_partition, x_grid, y_grid = generate_plot_scaffold(x_segments, y_segments,
-                                                                          y_min, y_max, x_min, x_max)
-        dx, dy, magnitude = generate_plot_output(diff_eqn, x_grid, y_grid)
-        fig = draw_plot(dx, dy, magnitude, x_grid, y_grid, colormap=plt.cm.jet)
+        try:
+            diff_eqn = generate_functions_from_input(st.session_state.dydx)
+            x_partition, y_partition, x_grid, y_grid = generate_plot_scaffold(x_segments, y_segments,
+                                                                              y_min, y_max, x_min, x_max)
+            dx, dy, magnitude = generate_plot_output(diff_eqn, x_grid, y_grid)
+            fig = draw_plot(dx, dy, magnitude, x_grid, y_grid, colormap=plt.cm.jet)
 
-        # For each line that the user had drawn, recalculate their positions
-        for initial_condition in st.session_state.initial_conditions:
-            x_domain, out = solve_ivp(initial_condition)
-            fig.add_trace(go.Scatter(x=x_domain, y=out))
+            # For each line that the user had drawn, recalculate their positions
+            for initial_condition in st.session_state.initial_conditions:
+                x_domain, out = solve_ivp(initial_condition)
+                fig.add_trace(go.Scatter(x=x_domain, y=out))
 
-        render_plot(fig)
+            render_plot(fig)
+        except Exception as e:
+            st.warning("An exception occurred while processing your equation. Try again, or refresh the page")
+
+
 
 
     def click_plot_input_callback():
