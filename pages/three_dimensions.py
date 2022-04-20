@@ -151,12 +151,12 @@ def app():
 
         x_input_with_vars = x_input.subs([(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
         y_input_with_vars = y_input.subs([(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
-        z_input_with_vars = y_input.subs([(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
+        z_input_with_vars = z_input.subs([(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
 
 
         x_diff_eqn = lambdify([x, y, z, t], x_input_with_vars, 'numpy')
         y_diff_eqn = lambdify([x, y, z, t], y_input_with_vars, 'numpy')
-        z_diff_eqn = lambdify([x, y, z, t], y_input_with_vars, 'numpy')
+        z_diff_eqn = lambdify([x, y, z, t], z_input_with_vars, 'numpy')
         print(x_diff_eqn)
         st.session_state.equation_system = np.array([x_diff_eqn, y_diff_eqn, z_diff_eqn])
 

@@ -14,11 +14,16 @@ st.set_page_config(layout="wide")
 
 # Title of the main page
 # st.title("Carney Phase Plane Visualizer")
-st.markdown("<h1 style='text-align: center; color: red;'>Carney Phase Plane Visualizer</h1>", unsafe_allow_html=True)
+#st.markdown("<h1 style='text-align: center; color: red;'>Carney Phase Plane Visualizer</h1>", unsafe_allow_html=True)
+
 
 
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 'Home'
+
+
+
+
 
 # Add all your applications (pages) here
 app.add_page("Home", home.app)
