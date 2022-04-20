@@ -5,6 +5,7 @@ import streamlit as st
 from common.multipage import MultiPage
 from pages import two_dimensions, home, one_dimension, three_dimensions  # import your pages here
 
+
 # Create an instance of the app
 app = MultiPage()
 
