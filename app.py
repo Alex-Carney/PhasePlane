@@ -7,6 +7,7 @@ from pages import two_dimensions, home, one_dimension, three_dimensions  # impor
 
 
 
+
 # Create an instance of the app
 app = MultiPage()
 
