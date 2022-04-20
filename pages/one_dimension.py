@@ -61,6 +61,7 @@ def app(flag):
 
         render_plot(fig)
 
+
     def click_plot_input_callback():
         """
         Fired when a user clicks on the plot. First, the point the user clicked on is parsed.
