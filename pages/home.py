@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-def app():
+def app(flag):
     # Only render the background image for home page
     if st.session_state.current_page == 'Home':
         st.markdown(

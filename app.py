@@ -8,6 +8,7 @@ from pages import two_dimensions, home, one_dimension, three_dimensions  # impor
 # Create an instance of the app
 app = MultiPage()
 
+
 # First command must be setting configs
 # Initial Settings ------------------------
 st.set_page_config(layout="wide")

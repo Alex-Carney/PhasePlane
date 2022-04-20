@@ -14,7 +14,8 @@ from common.components_callbacks import register_callback
 import json
 from common import variable as v
 
-def app():
+def app(flag):
+
     # Setup global vars
     transformations = (standard_transformations + (implicit_multiplication_application, convert_xor))
     x = symbols('x')
@@ -221,12 +222,16 @@ def app():
     col1.header("Enter single ODE")
     col2.header("Output")
 
+
+
     # Setup widgets ------------------------------------------
     dydx_equation_input: str = col1.text_input("dy/dx = ", 'x+y', key="dydx", on_change=text_input_callback)
 
+
+    print('value of dydx equation input is ' + str(dydx_equation_input))
+
     # Clear curves
     clear_curves = col1.button("Clear Curves", key="clear", on_click=clear_curves_callback)
-
 
 
     # Add a variable form
@@ -292,22 +297,9 @@ def app():
         st.write("ARROW SCALING")
         st.checkbox("Normalize Arrows", value=True)
 
+    print('the value of flag is ' + str(flag))
+
     # Setup Plot Interactions Expander ------------------------
     plot_interactions_expander = st.expander(label='Plot Interactions')
 
     register_callback("my_key", click_plot_input_callback)
-
-    print("please no")
-    #
-    # def my_callback():
-    #     print("callback")
-    #
-    # if not 'my_key' in st.session_state:
-    #     print("this happened once")
-    #     register_callback("my_key", text_input_callback)
-
-
-
-    # fig2 = px.line(x=[1], y=[1])
-    # clicked_points = plotly_events(fig2, key="my_key")
-    # print(clicked_points)

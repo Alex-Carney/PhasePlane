@@ -41,10 +41,11 @@ class MultiPage:
         print("Currently on " + str(page['title']) +
               " compared to state " + str(st.session_state.current_page))
 
-        if page['title'] != st.session_state.current_page:
+        flag = page['title'] != st.session_state.current_page
+        if flag:
             # the page has changed. Clear the cache
             print("Clearing cache...")
             st.session_state.clear()
 
         st.session_state.current_page = page['title']
-        page['function']()
+        page['function'](flag)

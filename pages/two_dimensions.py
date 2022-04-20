@@ -14,7 +14,7 @@ from common.components_callbacks import register_callback
 import json
 from common import variable as v
 
-def app():
+def app(flag):
     # Setup global vars
     transformations = (standard_transformations + (implicit_multiplication_application, convert_xor))
     x = symbols('x')
