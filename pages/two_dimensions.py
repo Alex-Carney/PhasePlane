@@ -22,14 +22,24 @@ def app(flag):
     t = symbols('t')
 
     # Setup boundary values
-    x_segments: int = 20
-    y_segments: int = 20
-    y_min: int = -4
-    y_max: int = 4
-    x_min: int = -4
-    x_max: int = 4
-
-
+    # x_segments: int = 20
+    # y_segments: int = 20
+    # y_min: int = -4
+    # y_max: int = 4
+    # x_min: int = -4
+    # x_max: int = 4
+    if 'x_segments' not in st.session_state:
+        st.session_state.x_segments = 20
+    if 'y_segments' not in st.session_state:
+        st.session_state.y_segments = 20
+    if 'x_min' not in st.session_state:
+        st.session_state.x_min = -4
+    if 'x_max' not in st.session_state:
+        st.session_state.x_max = 4
+    if 'y_min' not in st.session_state:
+        st.session_state.y_min = -4
+    if 'y_max' not in st.session_state:
+        st.session_state.y_max = 4
 
 
     # Setup other global values
@@ -55,18 +65,25 @@ def app(flag):
         then the plot scaffold is created. Finally, the plot is populated with points, then
         drawn
         """
-        (x_diff_eqn, y_diff_eqn) = generate_functions_from_input(st.session_state.dxdt, st.session_state.dydt)
-        x_partition, y_partition, x_grid, y_grid = generate_plot_scaffold(x_segments, y_segments,
-                                                                          y_min, y_max, x_min, x_max)
-        dx, dy, magnitude = generate_plot_output(x_diff_eqn, y_diff_eqn, x_grid, y_grid)
-        fig = draw_plot(dx, dy, magnitude, x_grid, y_grid, colormap=plt.cm.jet)
+        try:
+            (x_diff_eqn, y_diff_eqn) = generate_functions_from_input(st.session_state.dxdt, st.session_state.dydt)
+            x_partition, y_partition, x_grid, y_grid = generate_plot_scaffold(st.session_state.x_segments,
+                                                                              st.session_state.y_segments,
+                                                                              st.session_state.y_min,
+                                                                              st.session_state.y_max,
+                                                                              st.session_state.x_min,
+                                                                              st.session_state.x_max)
+            dx, dy, magnitude = generate_plot_output(x_diff_eqn, y_diff_eqn, x_grid, y_grid)
+            fig = draw_plot(dx, dy, magnitude, x_grid, y_grid, colormap=plt.cm.jet)
 
-        # For each line that the user had drawn, recalculate their positions
-        for initial_condition in st.session_state.initial_conditions:
-            line = solve_ivp(initial_condition)
-            fig.add_trace(go.Scatter(x=line[0, :], y=line[1, :]))
+            # For each line that the user had drawn, recalculate their positions
+            for initial_condition in st.session_state.initial_conditions:
+                line = solve_ivp(initial_condition)
+                fig.add_trace(go.Scatter(x=line[0, :], y=line[1, :]))
 
-        render_plot(fig)
+            render_plot(fig)
+        except:
+            st.warning("An exception occurred while processing your equation. Try again, or refresh the page")
 
     def click_plot_input_callback():
         """
@@ -91,14 +108,34 @@ def app(flag):
         fig.add_trace(go.Scatter(x=line[0, :], y=line[1, :]))
         render_plot(fig)
 
+    def manual_ivp_input_callback(init_x, init_y):
+        """
+        Fired when someone submits a form for an initial condition. Does the same
+        as click plot input callback
+        """
+        try:
+            initial_conds = np.array([init_x, init_y])
+            x_domain, out = solve_ivp(initial_conds)
+            st.session_state.initial_conditions.append(initial_conds)
+            print(st.session_state.initial_conditions)
+            fig = st.session_state.phase_plane
+            fig.add_trace(go.Scatter(x=x_domain, y=out))
+            render_plot(fig)
+        except:
+            st.warning("Can't do that right now. Try making a plot first")
+
+
     def clear_curves_callback():
         """
         Fired when a user wants to clear all curves from the plot
         """
-        fig = st.session_state.phase_plane
-        fig.data = [fig.data[0]]  # keep only the 0th trace (the arrows)
-        st.session_state.initial_conditions = []
-        render_plot(fig)
+        try:
+            fig = st.session_state.phase_plane
+            fig.data = [fig.data[0]]  # keep only the 0th trace (the arrows)
+            st.session_state.initial_conditions = []
+            render_plot(fig)
+        except:
+            st.warning("Can't do that right now. Try making a plot first.")
 
     def slider_change_callback(letter):
         """
@@ -222,8 +259,8 @@ def app(flag):
         with col2:
             #st.plotly_chart(fig)
             print("this was called")
-            fig.update_layout(yaxis_range=[y_min, y_max])
-            fig.update_layout(xaxis_range=[x_min, x_max])
+            fig.update_layout(yaxis_range=[st.session_state.y_min, st.session_state.y_max])
+            fig.update_layout(xaxis_range=[st.session_state.x_min, st.session_state.x_max])
             st.session_state.clicked_points = plotly_events(fig, key="my_key")
             st.session_state.phase_plane = fig
             print(st.session_state.clicked_points)
@@ -263,8 +300,8 @@ def app(flag):
     col2.header("Output")
 
     # Setup widgets ------------------------------------------
-    dxdt_equation_input: str = col1.text_input("dx/dt = ", '-x', key="dxdt", on_change=text_input_callback)
-    dydt_equation_input: str = col1.text_input("dy/dt = ", "y", key="dydt", on_change=text_input_callback)
+    dxdt_equation_input: str = col1.text_input("dx/dt = ", key="dxdt", on_change=text_input_callback)
+    dydt_equation_input: str = col1.text_input("dy/dt = ", key="dydt", on_change=text_input_callback)
 
     # Clear curves
     clear_curves = col1.button("Clear Curves", key="clear", on_click=clear_curves_callback)
@@ -331,18 +368,20 @@ def app(flag):
             init_y = st.number_input("Initial Y")
             print(init_x)
             ic_submit = ic_form.form_submit_button("Submit IVP")
+            if init_x is not None and init_y is not None and ic_submit is True:
+                manual_ivp_input_callback(init_x, init_y)
 
     # Setup Options Expander ----------------------------------
     options_expander = st.expander(label='Plot Options')
     with options_expander:
         st.write("PLOT BOUNDS")
         options_col1, options_col2, options_col3 = st.columns(3)
-        options_col1.number_input("xMin", step=1)
-        options_col2.number_input("xMax", step=1)
-        options_col1.number_input("yMin", step=1)
-        options_col2.number_input("yMax", step=1)
-        options_col3.number_input("xSegments", step=1)
-        options_col3.number_input("ySegments", step=1)
+        options_col1.number_input("xMin", step=1, value=-4, key='x_min', on_change=text_input_callback)
+        options_col2.number_input("xMax", step=1, value=4, key='x_max', on_change=text_input_callback)
+        options_col1.number_input("yMin", step=1, value=-4, key='y_min', on_change=text_input_callback)
+        options_col2.number_input("yMax", step=1, value=4, key='y_max', on_change=text_input_callback)
+        options_col3.number_input("xSegments", step=1, value=20, key='x_segments', on_change=text_input_callback)
+        options_col3.number_input("ySegments", step=1, value=20, key='y_segments', on_change=text_input_callback)
         st.write("ARROW SCALING")
         st.checkbox("Normalize Arrows", value=True)
 
