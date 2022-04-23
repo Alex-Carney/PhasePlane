@@ -14,7 +14,11 @@ app = MultiPage()
 
 # First command must be setting configs
 # Initial Settings ------------------------
-st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="Phase Space",
+    page_icon="sunglasses",
+    layout="wide",
+)
 
 # Title of the main page
 # st.title("Carney Phase Plane Visualizer")

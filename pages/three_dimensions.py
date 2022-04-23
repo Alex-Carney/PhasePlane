@@ -8,11 +8,12 @@ from sympy.parsing.sympy_parser import parse_expr
 from sympy.parsing.sympy_parser import standard_transformations, \
     implicit_multiplication_application, convert_xor
 import plotly.graph_objects as go
-import plotly.figure_factory as ff
+import plotly.express as px
 from streamlit_plotly_events import plotly_events
 from common.components_callbacks import register_callback
 import json
 from common import variable as v
+
 
 def app(flag):
     # Setup global vars
@@ -35,14 +36,10 @@ def app(flag):
     z_min: int = -4
     z_max: int = 4
 
-
-
-
     # Setup other global values
     t_step = .01
     h = .1
     time = np.r_[0:10:t_step]
-
 
     if 'initial_conditions' not in st.session_state:
         st.session_state['initial_conditions'] = []
@@ -53,18 +50,18 @@ def app(flag):
     if 'variable_letters' not in st.session_state:
         st.session_state['variable_letters'] = []
 
-
-
     def text_input_callback():
         """
         Fired when a user inputs a new equation. The input is parsed into an equation,
         then the plot scaffold is created. Finally, the plot is populated with points, then
         drawn
         """
-        (x_diff_eqn, y_diff_eqn, z_diff_eqn) = generate_functions_from_input(st.session_state.dxdt, st.session_state.dydt, st.session_state.dzdt)
+        (x_diff_eqn, y_diff_eqn, z_diff_eqn) = generate_functions_from_input(st.session_state.dxdt,
+                                                                             st.session_state.dydt,
+                                                                             st.session_state.dzdt)
         x_partition, y_partition, z_partition, x_grid, y_grid, z_grid = \
             generate_plot_scaffold(x_segments, y_segments, y_min, y_max, x_min, x_max)
-        #replace grids with partitions
+        # replace grids with partitions
         dx, dy, dz, magnitude = generate_plot_output(x_diff_eqn, y_diff_eqn, z_diff_eqn, x_grid, y_grid, z_grid)
         fig = draw_plot(dx, dy, dz, magnitude, x_grid, y_grid, z_grid)
 
@@ -75,27 +72,21 @@ def app(flag):
 
         render_plot(fig)
 
-    def click_plot_input_callback():
+    def manual_ivp_input_callback(init_x, init_y, init_z):
         """
-        Fired when a user clicks on the plot. First, the point the user clicked on is parsed.
-        Then, the differential equation is numerically analyzed with RK. Finally, the trace
-        from that line is added to the plot, and re-rendered.
+        Fired when someone submits a form for an initial condition.
+        There is no click plot callback for 3 dimensions because it happens
+        too often, even when users are just trying to pan around the screen
         """
-        #text_input_callback()
-        # Get the point clicked. It is a string of JSON. Trim it, then parse to json for use
-        str_without_brack = st.session_state.my_key[1:-1]
-        result = json.loads(str_without_brack)
-
-
-
-        initial_conds = np.array([result['x'],
-                                  result['y']])
-        line = solve_ivp(initial_conds)
+        # try:
+        initial_conds = np.array([init_x, init_y, init_z])
+        out = solve_ivp(initial_conds)
         st.session_state.initial_conditions.append(initial_conds)
-        print(st.session_state.initial_conditions)
         fig = st.session_state.phase_plane
-        fig.add_trace(go.Scatter(x=line[0, :], y=line[1, :]))
+        fig.add_trace(go.Scatter3d(x=out[0, :], y=out[1, :], z=out[2, :]))
         render_plot(fig)
+        # except:
+        #st.warning("Can't do that right now. Try making a plot first")
 
     def clear_curves_callback():
         """
@@ -122,22 +113,18 @@ def app(flag):
         print("Getting from session state: letter " + str(letter) + " val " + str(st.session_state[f"{letter}"]))
         text_input_callback()
 
-
-
-
     def solve_ivp(initial_conditions):
         """
         Uses carney_diff_eqs RK4 implementation to solve the initial value problem
         :param initial_conditions: An array containing [X, Y] initial condition coordinates
         :return: A line of X,Y points that solves the equation
         """
-        return ode44.runge_kutta_second(
+        return ode44.runge_kutta_any_order(
             st.session_state.equation_system,
             time,
             initial_conditions,
             h
         )
-
 
     def generate_functions_from_input(dxdt_equation_input: str, dydt_equation_input: str, dzdt_equation_input: str):
         # Parse equations into lambdas
@@ -149,10 +136,12 @@ def app(flag):
         print("z_input = " + str(z_input))
         # Convert SymPy objects into ones that numpy can use
 
-        x_input_with_vars = x_input.subs([(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
-        y_input_with_vars = y_input.subs([(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
-        z_input_with_vars = z_input.subs([(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
-
+        x_input_with_vars = x_input.subs(
+            [(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
+        y_input_with_vars = y_input.subs(
+            [(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
+        z_input_with_vars = z_input.subs(
+            [(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
 
         x_diff_eqn = lambdify([x, y, z, t], x_input_with_vars, 'numpy')
         y_diff_eqn = lambdify([x, y, z, t], y_input_with_vars, 'numpy')
@@ -162,7 +151,6 @@ def app(flag):
 
         return x_diff_eqn, y_diff_eqn, z_diff_eqn
 
-
     def generate_plot_scaffold(x_segments, y_segments, y_min, y_max, x_min, x_max):
         # Generate 'skeleton' for plot
         x_partition: ndarray = np.linspace(x_min, x_max, x_segments)
@@ -171,11 +159,10 @@ def app(flag):
         x_grid, y_grid, z_grid = np.meshgrid(x_partition, y_partition, z_partition)
         return x_partition, y_partition, z_partition, x_grid, y_grid, z_grid
 
-
     def generate_plot_output(x_diff_eqn, y_diff_eqn, z_diff_eqn,
-                      x_grid: ndarray,
-                      y_grid: ndarray,
-                      z_grid: ndarray):
+                             x_grid: ndarray,
+                             y_grid: ndarray,
+                             z_grid: ndarray):
         # Generate plot
         a = 1
         dx = x_diff_eqn(x_grid, y_grid, z_grid, 0)
@@ -216,8 +203,6 @@ def app(flag):
         dx_flat = dx.flatten()
         dy_flat = dy.flatten()
         dz_flat = dz.flatten()
-
-
 
         fig = go.Figure(data=go.Cone(
             # x=x_grid, y=y_grid, z=z_grid, u=dx/magnitude, v=dy/magnitude, w=dz/magnitude,
@@ -266,22 +251,25 @@ def app(flag):
         #                  )
         return fig
 
-
     def render_plot(fig):
         with col2:
-            #st.plotly_chart(fig)
+            # st.plotly_chart(fig)
             print("this was called")
             # fig.update_layout(yaxis_range=[y_min, y_max])
             # fig.update_layout(xaxis_range=[x_min, x_max])
             # fig.update_layout(layout_zaxis_range=[z_min, z_max])
-
+            fig.update_layout(
+                scene=dict(
+                    xaxis=dict(range=[-4, 4]),
+                    yaxis=dict(range=[-4, 4]),
+                    zaxis=dict(range=[-4, 4])
+                )
+            )
 
             st.plotly_chart(fig)
             # st.session_state.clicked_points = plotly_events(fig, key="my_key")
             st.session_state.phase_plane = fig
             # print(st.session_state.clicked_points)
-
-
 
     # Setup screen
     col1, col2 = st.columns([1, 2])
@@ -297,8 +285,6 @@ def app(flag):
     # Clear curves
     clear_curves = col1.button("Clear Curves", key="clear", on_click=clear_curves_callback)
 
-
-
     # Add a variable form
     var_form_expander = col1.expander(label='Add a Variable')
     with var_form_expander:
@@ -307,18 +293,18 @@ def app(flag):
             var_letter = st.text_input("Variable Letter", key='var_letter')
             var_min_value = st.number_input("Minimum Allowed Value", key='var_min_value')
             var_max_value = st.number_input("Maximum Allowed Value", key='var_max_value')
-            var_step_size = st.number_input("Step Size (For Slider)", key='var_step_size') #TODO: Default value not zero
+            var_step_size = st.number_input("Step Size (For Slider)",
+                                            key='var_step_size')  # TODO: Default value not zero
             var_submit = st.form_submit_button("Submit Variable")
             print("inside form var submit is " + str(var_submit))
             print("hello i am here now")
             if var_letter is not None and var_submit is True:
-                st.session_state.variables.append(v.Variable(var_letter, var_min_value, var_max_value, var_step_size, None))
+                st.session_state.variables.append(
+                    v.Variable(var_letter, var_min_value, var_max_value, var_step_size, None))
                 st.session_state.variable_letters.append(var_letter)
 
-
-
     for var in st.session_state.variables:
-        #if var.step_size != 0 and var.slider is None:
+        # if var.step_size != 0 and var.slider is None:
         print(var.letter)
         var.slider = col2.slider(f"Slider for {var.letter}",
                                  key=f"{var.letter}",
@@ -328,13 +314,12 @@ def app(flag):
                                  on_change=slider_change_callback,
                                  args=(var.letter)
                                  )
-        print("this is a var: " + str(var) + " with value " + str(var.letter) + " and numerical value " + str(var.slider))
-
+        print(
+            "this is a var: " + str(var) + " with value " + str(var.letter) + " and numerical value " + str(var.slider))
 
     print("we are now here")
     col1.markdown("""---""")
     col1.markdown("""**Click on plot to draw solution curve. Or manually input initial conditions**""")
-
 
     # Initial Conditions Form --------------------------------
     initial_conditions_expander = col1.expander(label='Manual Initial Conditions')
@@ -344,8 +329,10 @@ def app(flag):
             # form_col1, form_col2 = st.beta_columns(2)
             init_x = st.number_input("Initial X")
             init_y = st.number_input("Initial Y")
-            print(init_x)
+            init_z = st.number_input("Initial Z")
             ic_submit = ic_form.form_submit_button("Submit IVP")
+            if init_x is not None and init_y is not None and init_z is not None and ic_submit is True:
+                manual_ivp_input_callback(init_x, init_y, init_z)
 
     # Setup Options Expander ----------------------------------
     options_expander = st.expander(label='Plot Options')

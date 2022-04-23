@@ -300,8 +300,8 @@ def app(flag):
     col2.header("Output")
 
     # Setup widgets ------------------------------------------
-    dxdt_equation_input: str = col1.text_input("dx/dt = ", key="dxdt", on_change=text_input_callback)
-    dydt_equation_input: str = col1.text_input("dy/dt = ", key="dydt", on_change=text_input_callback)
+    dxdt_equation_input: str = col1.text_input("dx/dt = ",'x', key="dxdt", on_change=text_input_callback)
+    dydt_equation_input: str = col1.text_input("dy/dt = ", 'y', key="dydt", on_change=text_input_callback)
 
     # Clear curves
     clear_curves = col1.button("Clear Curves", key="clear", on_click=clear_curves_callback)
