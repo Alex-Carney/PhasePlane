@@ -13,6 +13,7 @@ from streamlit_plotly_events import plotly_events
 from common.components_callbacks import register_callback
 import json
 from common import variable as v
+import scipy.integrate as si
 
 
 def app(flag):
@@ -24,18 +25,36 @@ def app(flag):
     t = symbols('t')
 
     # Setup boundary values
-    x_segments: int = 20
-    y_segments: int = 20
-    z_segments: int = 20
+    # x_segments: int = 20
+    # y_segments: int = 20
+    # z_segments: int = 20
+    #
+    # y_min: int = -4
+    # y_max: int = 4
+    # x_min: int = -4
+    # x_max: int = 4
+    #
+    # z_min: int = -4
+    # z_max: int = 4
 
-    y_min: int = -4
-    y_max: int = 4
-    x_min: int = -4
-    x_max: int = 4
-
-    z_min: int = -4
-    z_max: int = 4
-
+    if 'x_segments' not in st.session_state:
+        st.session_state.x_segments = 20
+    if 'y_segments' not in st.session_state:
+        st.session_state.y_segments = 20
+    if 'z_segments' not in st.session_state:
+        st.session_state.z_segments = 20
+    if 'x_min' not in st.session_state:
+        st.session_state.x_min = -4
+    if 'x_max' not in st.session_state:
+        st.session_state.x_max = 4
+    if 'y_min' not in st.session_state:
+        st.session_state.y_min = -4
+    if 'y_max' not in st.session_state:
+        st.session_state.y_max = 4
+    if 'z_max' not in st.session_state:
+        st.session_state.z_max = 4
+    if 'z_min' not in st.session_state:
+        st.session_state.z_min = -4
     # Setup other global values
     t_step = .01
     h = .1
@@ -60,15 +79,28 @@ def app(flag):
                                                                              st.session_state.dydt,
                                                                              st.session_state.dzdt)
         x_partition, y_partition, z_partition, x_grid, y_grid, z_grid = \
-            generate_plot_scaffold(x_segments, y_segments, y_min, y_max, x_min, x_max)
+            generate_plot_scaffold(st.session_state.x_segments,
+                                   st.session_state.y_segments,
+                                   st.session_state.y_min,
+                                   st.session_state.y_max,
+                                   st.session_state.x_min,
+                                   st.session_state.x_max)
         # replace grids with partitions
         dx, dy, dz, magnitude = generate_plot_output(x_diff_eqn, y_diff_eqn, z_diff_eqn, x_grid, y_grid, z_grid)
         fig = draw_plot(dx, dy, dz, magnitude, x_grid, y_grid, z_grid)
 
         # For each line that the user had drawn, recalculate their positions
-        # for initial_condition in st.session_state.initial_conditions:
-        #     line = solve_ivp(initial_condition)
-        #     fig.add_trace(go.Scatter(x=line[0, :], y=line[1, :]))
+        for initial_condition in st.session_state.initial_conditions:
+            out = solve_ivp(initial_condition)
+            print("size of x " + str(np.shape(out[0, :])))
+            print("size of y " + str(np.shape(out[1, :])))
+            print("size of z " + str(np.shape(out[2, :])))
+
+
+            print("x_input = " + str(max(out[0, :])))
+            print("y_input = " + str(max(out[1, :])))
+            print("z_input = " + str(max(out[2, :])))
+            fig.add_trace(go.Scatter3d(x=out[0, :], y=out[1, :], z=out[2, :]))
 
         render_plot(fig)
 
@@ -78,6 +110,8 @@ def app(flag):
         There is no click plot callback for 3 dimensions because it happens
         too often, even when users are just trying to pan around the screen
         """
+
+
         # try:
         initial_conds = np.array([init_x, init_y, init_z])
         out = solve_ivp(initial_conds)
@@ -86,7 +120,7 @@ def app(flag):
         fig.add_trace(go.Scatter3d(x=out[0, :], y=out[1, :], z=out[2, :]))
         render_plot(fig)
         # except:
-        #st.warning("Can't do that right now. Try making a plot first")
+        # st.warning("Can't do that right now. Try making a plot first")
 
     def clear_curves_callback():
         """
@@ -115,25 +149,69 @@ def app(flag):
 
     def solve_ivp(initial_conditions):
         """
-        Uses carney_diff_eqs RK4 implementation to solve the initial value problem
-        :param initial_conditions: An array containing [X, Y] initial condition coordinates
-        :return: A line of X,Y points that solves the equation
+        I wanted to use my own implementation of RK44 to solve 3D problems, but ran
+        into an issue where most interesting problems in 3D are "stiff", or chaotic,
+        meaning they are very sensitive to numerical instability. Therefore, I'm using
+        an external library for stiff systems
+        :param initial_conditions:
+        :return:
         """
-        return ode44.runge_kutta_any_order(
-            st.session_state.equation_system,
-            time,
-            initial_conditions,
-            h
-        )
+        print("ENTERING SOLVE_IVP BLOCK WITH ICS " + str(initial_conditions))
+        print("TYPE OF " + str(type(st.session_state.equation_system[0])))
+
+        print("EXAMPLE INPUTS ")
+        print(st.session_state.equation_system[0](10, 10, 10, 10))
+        print(st.session_state.equation_system[1](10, 10, 10, 10))
+        print(st.session_state.equation_system[2](10, 10, 10, 10))
+
+        ics = np.array([initial_conditions[0], initial_conditions[1], initial_conditions[2]])
+
+        # r = 10
+        # eqn1 = lambda t, x, y, z: 10 * (-x + y)
+        # eqn2 = lambda t, x, y, z: r * x - y - x * z
+        # eqn3 = lambda t, x, y, z: -(8 / 3) * z + x * y
+        #
+        # st.session_state.equation_system[0] = eqn1
+        # st.session_state.equation_system[1] = eqn2
+        # st.session_state.equation_system[2] = eqn3
+
+
+        def ode_sys(t, XYZ):
+            eqn1 = st.session_state.equation_system[0]
+            eqn2 = st.session_state.equation_system[1]
+            eqn3 = st.session_state.equation_system[2]
+
+
+            dxdt = eqn1(XYZ[0], XYZ[1], XYZ[2], t)
+            dydt = eqn2(XYZ[0], XYZ[1], XYZ[2], t)
+            dzdt = eqn3(XYZ[0], XYZ[1], XYZ[2], t)
+            return [dxdt, dydt, dzdt]
+        t_span = np.array([0, 100])
+        out = si.solve_ivp(ode_sys, t_span, ics, method='LSODA')
+
+        xout = out.y[0, :]
+        yout = out.y[1, :]
+        zout = out.y[2, :]
+
+        print("MAX OF XOUT IS " + str(max(xout)))
+        print("MAX OF YOUT IS " + str(max(yout)))
+        print("MAX OF ZOUT IS " + str(max(zout)))
+
+        return out.y
+
+        # return ode44.runge_kutta_any_order(
+        #     st.session_state.equation_system,
+        #     time,
+        #     initial_conditions,
+        #     h
+        # )
 
     def generate_functions_from_input(dxdt_equation_input: str, dydt_equation_input: str, dzdt_equation_input: str):
         # Parse equations into lambdas
         x_input = parse_expr(f'{dxdt_equation_input}', transformations=transformations)
         y_input = parse_expr(f'{dydt_equation_input}', transformations=transformations)
         z_input = parse_expr(f'{dzdt_equation_input}', transformations=transformations)
-        print("x_input = " + str(x_input))
-        print("y_input = " + str(y_input))
-        print("z_input = " + str(z_input))
+
         # Convert SymPy objects into ones that numpy can use
 
         x_input_with_vars = x_input.subs(
@@ -153,9 +231,9 @@ def app(flag):
 
     def generate_plot_scaffold(x_segments, y_segments, y_min, y_max, x_min, x_max):
         # Generate 'skeleton' for plot
-        x_partition: ndarray = np.linspace(x_min, x_max, x_segments)
-        y_partition: ndarray = np.linspace(y_min, y_max, y_segments)
-        z_partition: ndarray = np.linspace(z_min, z_max, z_segments)
+        x_partition: ndarray = np.linspace(st.session_state.x_min, st.session_state.x_max, int(st.session_state.x_segments))
+        y_partition: ndarray = np.linspace(st.session_state.y_min, st.session_state.y_max, int(st.session_state.y_segments))
+        z_partition: ndarray = np.linspace(st.session_state.z_min, st.session_state.z_max, int(st.session_state.z_segments))
         x_grid, y_grid, z_grid = np.meshgrid(x_partition, y_partition, z_partition)
         return x_partition, y_partition, z_partition, x_grid, y_grid, z_grid
 
@@ -203,6 +281,10 @@ def app(flag):
         dx_flat = dx.flatten()
         dy_flat = dy.flatten()
         dz_flat = dz.flatten()
+
+        print("max val X is " + str(max(x_flat)))
+        print("max val Y is " + str(max(y_flat)))
+        print("max val Z is " + str(max(z_flat)))
 
         fig = go.Figure(data=go.Cone(
             # x=x_grid, y=y_grid, z=z_grid, u=dx/magnitude, v=dy/magnitude, w=dz/magnitude,
@@ -260,9 +342,9 @@ def app(flag):
             # fig.update_layout(layout_zaxis_range=[z_min, z_max])
             fig.update_layout(
                 scene=dict(
-                    xaxis=dict(range=[-4, 4]),
-                    yaxis=dict(range=[-4, 4]),
-                    zaxis=dict(range=[-4, 4])
+                    xaxis=dict(range=[st.session_state.x_min, st.session_state.x_max]),
+                    yaxis=dict(range=[st.session_state.y_min, st.session_state.y_max]),
+                    zaxis=dict(range=[st.session_state.z_min, st.session_state.z_max])
                 )
             )
 
@@ -339,12 +421,15 @@ def app(flag):
     with options_expander:
         st.write("PLOT BOUNDS")
         options_col1, options_col2, options_col3 = st.columns(3)
-        options_col1.number_input("xMin", step=1)
-        options_col2.number_input("xMax", step=1)
-        options_col1.number_input("yMin", step=1)
-        options_col2.number_input("yMax", step=1)
-        options_col3.number_input("xSegments", step=1)
-        options_col3.number_input("ySegments", step=1)
+        options_col1.number_input("xMin", step=1, value=-4, key='x_min', on_change=text_input_callback)
+        options_col2.number_input("xMax", step=1, value=4, key='x_max', on_change=text_input_callback)
+        options_col1.number_input("yMin", step=1, value=-4, key='y_min', on_change=text_input_callback)
+        options_col2.number_input("yMax", step=1, value=4, key='y_max', on_change=text_input_callback)
+        options_col1.number_input("zMin", step=1, value=-4, key='z_min', on_change=text_input_callback)
+        options_col2.number_input("zMax", step=1, value=4, key='z_max', on_change=text_input_callback)
+        options_col3.number_input("xSegments", step=1, value=20, key='x_segments', on_change=text_input_callback)
+        options_col3.number_input("ySegments", step=1, value=20, key='y_segments', on_change=text_input_callback)
+        options_col3.number_input("zSegments", step=1, value=20, key='z_segments', on_change=text_input_callback)
         st.write("ARROW SCALING")
         st.checkbox("Normalize Arrows", value=True)
 
