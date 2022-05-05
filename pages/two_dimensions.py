@@ -13,6 +13,7 @@ from streamlit_plotly_events import plotly_events
 from common.components_callbacks import register_callback
 import json
 from common import variable as v
+import scipy.integrate as si
 
 def app(flag):
     # Setup global vars
@@ -44,8 +45,8 @@ def app(flag):
 
     # Setup other global values
     t_step = .01
-    h = .1
-    time = np.r_[0:10:t_step]
+    h = .01
+    time = np.r_[0:5:t_step]
 
 
     if 'initial_conditions' not in st.session_state:
@@ -162,12 +163,50 @@ def app(flag):
         :param initial_conditions: An array containing [X, Y] initial condition coordinates
         :return: A line of X,Y points that solves the equation
         """
-        return ode44.runge_kutta_second(
-            st.session_state.equation_system,
-            time,
+
+        print("ENTERING SOLVE IVP")
+
+        # outRight = ode44.runge_kutta_second(
+        #     st.session_state.equation_system,
+        #     time,
+        #     initial_conditions,
+        #     h)
+        # outLeft = ode44.runge_kutta_second(
+        #     st.session_state.equation_system,
+        #     time,
+        #     initial_conditions,
+        #     -h
+        # )
+
+        def ode_sys(t, XY):
+            dxdt = st.session_state.equation_system[0](XY[0], XY[1], t)
+            dydt = st.session_state.equation_system[1](XY[0], XY[1], t)
+            return [dxdt, dydt]
+
+        outRight = si.solve_ivp(
+            ode_sys,
+            np.array([0, 10]),
             initial_conditions,
-            h
-        )
+            method='RK45',
+            max_step = .1)
+
+        outLeft = si.solve_ivp(
+            ode_sys,
+            np.array([0, -10]),
+            initial_conditions,
+            method='RK45',
+            max_step=.1)
+
+        # print("---MAX X RIGHT--- " + str(max(outRight[0, :])))
+        # print("---MAX Y RIGHT--- " + str(max(outRight[1, :])))
+        # print("---MAX X LEFT--- " + str(max(outLeft[0, :])))
+        # print("---MAX Y LEFT--- " + str(max(outLeft[1, :])))
+
+        out = np.hstack((np.flip(outLeft.y, axis=1), outRight.y))
+
+
+
+        return out
 
 
     def generate_functions_from_input(dxdt_equation_input: str, dydt_equation_input: str):

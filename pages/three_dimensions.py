@@ -15,6 +15,8 @@ import json
 from common import variable as v
 import scipy.integrate as si
 
+import datetime
+
 
 def app(flag):
     # Setup global vars
@@ -164,30 +166,20 @@ def app(flag):
         print(st.session_state.equation_system[1](10, 10, 10, 10))
         print(st.session_state.equation_system[2](10, 10, 10, 10))
 
-        ics = np.array([initial_conditions[0], initial_conditions[1], initial_conditions[2]])
-
-        # r = 10
-        # eqn1 = lambda t, x, y, z: 10 * (-x + y)
-        # eqn2 = lambda t, x, y, z: r * x - y - x * z
-        # eqn3 = lambda t, x, y, z: -(8 / 3) * z + x * y
-        #
-        # st.session_state.equation_system[0] = eqn1
-        # st.session_state.equation_system[1] = eqn2
-        # st.session_state.equation_system[2] = eqn3
-
 
         def ode_sys(t, XYZ):
             eqn1 = st.session_state.equation_system[0]
             eqn2 = st.session_state.equation_system[1]
             eqn3 = st.session_state.equation_system[2]
-
-
             dxdt = eqn1(XYZ[0], XYZ[1], XYZ[2], t)
             dydt = eqn2(XYZ[0], XYZ[1], XYZ[2], t)
             dzdt = eqn3(XYZ[0], XYZ[1], XYZ[2], t)
             return [dxdt, dydt, dzdt]
         t_span = np.array([0, 100])
-        out = si.solve_ivp(ode_sys, t_span, ics, method='LSODA')
+
+        begin_time = datetime.datetime.now()
+        out = si.solve_ivp(ode_sys, t_span, initial_conditions, method='LSODA')
+        print("ELAPSED: " + str(datetime.datetime.now() - begin_time))
 
         xout = out.y[0, :]
         yout = out.y[1, :]
