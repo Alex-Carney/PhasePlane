@@ -38,8 +38,6 @@ class MultiPage:
         )
 
         # run the app function
-        print("Currently on " + str(page['title']) +
-              " compared to state " + str(st.session_state.current_page))
 
         flag = page['title'] != st.session_state.current_page
         if flag:

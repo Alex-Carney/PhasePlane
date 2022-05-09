@@ -1,3 +1,8 @@
+"""
+Simple data class for storing a variable, along with the necessary data to re-instantiate them
+each time the page refreshes.
+@author Alex Carney
+"""
 import json
 
 class Variable:

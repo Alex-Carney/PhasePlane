@@ -18,6 +18,8 @@ Here's the result when you call Streamlit.setComponentValue():
     New component value: <value set through Streamlit.setComponentValue()>
     Args: hello world
     Script begins...
+
+@author: NOT Alex Carney, I got this from GitHub
 """
 from streamlit import session_state as _state
 from streamlit.components.v1 import components as _components

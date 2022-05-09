@@ -38,8 +38,6 @@ outLeft = cde.runge_kutta(dydx, x_domainLeft, yInput, -h)
 
 plt.quiver(xpartition, ypartition, dx/M, dy/M, headaxislength=0, headlength=0)
 
-print(outRight)
-print(outLeft)
 
 x_domain = np.hstack((np.flip(x_domainLeft[1:]), x_domainRight))
 out = np.hstack((np.flip(outLeft[1:]), outRight))

@@ -15,8 +15,17 @@ import json
 from common import variable as v
 import scipy.integrate as si
 
+"""
+This is the application for two dimensional systems.
+Time is the independent variable, with two dependent variables X and Y 
+"""
 
 def app(flag):
+
+    ##########################################################
+    ######## GLOBAL DATA AND INITIAL STATE VALUES ############
+    ##########################################################
+
     # Setup global vars
     transformations = (standard_transformations + (implicit_multiplication_application, convert_xor))
     x = symbols('x')
@@ -65,9 +74,8 @@ def app(flag):
     if 'step_max' not in st.session_state:
         st.session_state.step_max = .1
 
-    x_step: float = .1
 
-    # Setup other global values
+    # Setup other global values. These are only used for the Carney44 solver
     t_step = .01
     h = .01
     time = np.r_[0:5:t_step]
@@ -80,6 +88,10 @@ def app(flag):
 
     if 'variable_letters' not in st.session_state:
         st.session_state['variable_letters'] = []
+
+    ##########################################################
+    ######## CALLBACK FUNCTIONS ############
+    ##########################################################
 
     def text_input_callback():
         """
@@ -96,7 +108,7 @@ def app(flag):
                                                                               st.session_state.x_min,
                                                                               st.session_state.x_max)
             dx, dy, magnitude = generate_plot_output(x_diff_eqn, y_diff_eqn, x_grid, y_grid)
-            fig = draw_plot(dx, dy, magnitude, x_grid, y_grid, colormap=plt.cm.jet)
+            fig = draw_plot(dx, dy, magnitude, x_grid, y_grid)
 
             # For each line that the user had drawn, recalculate their positions
             for initial_condition in st.session_state.initial_conditions:
@@ -106,7 +118,6 @@ def app(flag):
             render_plot(fig)
         except Exception as e:
             st.warning("An exception occurred while processing your equation. Try again, or refresh the page")
-            print("ERROR WHILE PROCESSING EQUATION " + str(e))
 
     def click_plot_input_callback():
         """
@@ -114,8 +125,6 @@ def app(flag):
         Then, the differential equation is numerically analyzed with RK. Finally, the trace
         from that line is added to the plot, and re-rendered.
         """
-        # text_input_callback()
-        print(st.session_state.my_key)
         # Get the point clicked. It is a string of JSON. Trim it, then parse to json for use
         str_without_brack = st.session_state.my_key[1:-1]
         result = json.loads(str_without_brack)
@@ -126,7 +135,6 @@ def app(flag):
         initial_conds = [result['x'], result['y']]
         line = solve_ivp(initial_conds)
         st.session_state.initial_conditions.append(initial_conds)
-        print(st.session_state.initial_conditions)
         fig = st.session_state.phase_plane
         fig.add_trace(go.Scatter(x=line[0, :], y=line[1, :]))
         render_plot(fig)
@@ -140,7 +148,6 @@ def app(flag):
             initial_conds = [init_x, init_y]
             x_domain, out = solve_ivp(initial_conds)
             st.session_state.initial_conditions.append(initial_conds)
-            print(st.session_state.initial_conditions)
             fig = st.session_state.phase_plane
             fig.add_trace(go.Scatter(x=x_domain, y=out))
             render_plot(fig)
@@ -171,8 +178,6 @@ def app(flag):
         and solution curves might already be in terms of the variables (* a * b whatever)? Check it out
 
         """
-        print(letter)
-        print("Getting from session state: letter " + str(letter) + " val " + str(st.session_state[f"{letter}"]))
         text_input_callback()
 
     def import_session_state_callback(input_dict):
@@ -181,55 +186,32 @@ def app(flag):
         state, and redraw all necessary components.
         :param input_dict:
         """
-        print("IMPORTING SAVED STATE " + str(input_dict))
-        # Merge input dict into session state
-        # try:
-        #     print("TYPE OF SESSION STATE IS " + str(type(st.session_state)))
-        #     st.session_state.update(input_dict)
-        # except Exception as e:
-        #     print("ERROR " + str(e))
-        #     st.warning("Invalid dictionary input")
 
         # Attempt to merge input dict into session state. Then reload everything
-        # try:
-        for (key, val) in input_dict.items():
-            # Different keys might require different mechanisms to load
-            if key in float_included_keys:
-                st.session_state[key] = float(val)
-            elif key in integer_included_keys:
-                st.session_state[key] = int(val)
-            elif key == initial_condition_key:
-                st.session_state[initial_condition_key] = list(json.loads(val))
-            # elif key == variable_letter_key:
-            #     for letter in val:
-            #         st.session_state[variable_letter_key].append(letter)
-            elif key == variable_key:
-                # Variables are serialized as a list of variable JSON objects. Deserialize accordingly
-                print("val total is " + str(val))
-                for var_json in val:
+        try:
+            for (key, val) in input_dict.items():
+                # Different keys might require different mechanisms to load
+                if key in float_included_keys:
+                    st.session_state[key] = float(val)
+                elif key in integer_included_keys:
+                    st.session_state[key] = int(val)
+                elif key == initial_condition_key:
+                    st.session_state[initial_condition_key] = list(json.loads(val))
+                elif key == variable_key:
+                    # Variables are serialized as a list of variable JSON objects. Deserialize accordingly
+                    for var_json in val:
+                        st.session_state[variable_key].append(
+                            v.Variable(var_json['letter'], var_json['min_value'], var_json['max_value'], var_json['step_size'])
+                        )
+                        st.session_state[variable_letter_key].append(var_json['letter'])
+                else:
+                    st.session_state[key] = val
+        except Exception as ex:
+            st.warning("Invalid dictionary input")
 
-                    print("Var json is " + str(var_json))
-                    st.session_state[variable_key].append(
-                        v.Variable(var_json['letter'], var_json['min_value'], var_json['max_value'], var_json['step_size'])
-                    )
-                    st.session_state[variable_letter_key].append(var_json['letter'])
-            else:
-                st.session_state[key] = val
-
-                # st.session_state[key] = float(val) if key in float_included_keys \
-                #     else int(val) if key in integer_included_keys else val
-
-        # except Exception as ex:
-        #     print("ERROR " + str(ex))
-        #     st.warning("Invalid dictionary input")
-
-        print("AFTER UPDATING, THIS IS SESSION STATE " + str(st.session_state))
-
-        # initialize_variable_sliders()
-        # text_input_callback()
-
-
-
+    ##########################################################
+    ######## HELPER FUNCTIONS ############
+    ##########################################################
 
     def solve_ivp(initial_conditions):
         """
@@ -238,7 +220,6 @@ def app(flag):
         :return: A line of X,Y points that solves the equation
         """
 
-        print("ENTERING SOLVE IVP WITH SOVLER " + str(st.session_state.solver))
         # Required function by the implementation of si.solve_ivp
         def ode_sys(t, XY):
             dxdt = st.session_state.equation_system[0](XY[0], XY[1], t)
@@ -252,8 +233,7 @@ def app(flag):
         be a good thing to refactor), so instead the system is solved forwards in time,
         then backwards in time, then concatenated. 
         """
-
-
+        # Carney44 only solves forward in time.
         if st.session_state.solver == 'Carney44':
             out = ode44.runge_kutta_second(
                 st.session_state.equation_system,
@@ -282,10 +262,8 @@ def app(flag):
         # Parse equations into lambdas
         x_input = parse_expr(f'{dxdt_equation_input}', transformations=transformations)
         y_input = parse_expr(f'{dydt_equation_input}', transformations=transformations)
-        print("x_input = " + str(x_input))
-        print("y_input = " + str(y_input))
-        # Convert SymPy objects into ones that numpy can use
 
+        # Convert SymPy objects into ones that numpy can use
         x_input_with_vars = x_input.subs(
             [(this_v, st.session_state[f"{this_v}"]) for this_v in st.session_state.variable_letters])
         y_input_with_vars = y_input.subs(
@@ -293,7 +271,6 @@ def app(flag):
 
         x_diff_eqn = lambdify([x, y, t], x_input_with_vars, 'numpy')
         y_diff_eqn = lambdify([x, y, t], y_input_with_vars, 'numpy')
-        print(x_diff_eqn)
         st.session_state.equation_system = np.array([x_diff_eqn, y_diff_eqn])
 
         return x_diff_eqn, y_diff_eqn
@@ -311,9 +288,6 @@ def app(flag):
         # Generate plot
         dx = x_diff_eqn(x_grid, y_grid, 0)
         dy = y_diff_eqn(x_grid, y_grid, 0)
-        print("dx is " + str(dx))
-        print("dy is " + str(dy))
-        print("dx type is " + str(type(dx)))
         magnitude = np.sqrt(dx ** 2 + dy ** 2)  # magnitude
         return dx, dy, magnitude
 
@@ -322,9 +296,7 @@ def app(flag):
                   magnitude: int,
                   x_grid: ndarray,
                   y_grid: ndarray,
-                  colormap):
-        print(str(np.shape(dx)))
-        print(str(np.shape(x_grid)))
+                  ):
 
         fig = ff.create_quiver(
             x_grid, y_grid, dx / magnitude, dy / magnitude,
@@ -363,18 +335,13 @@ def app(flag):
 
     def render_plot(fig):
         with col2:
-            # st.plotly_chart(fig)
-            print("this was called")
             fig.update_layout(yaxis_range=[st.session_state.y_min, st.session_state.y_max])
             fig.update_layout(xaxis_range=[st.session_state.x_min, st.session_state.x_max])
             st.session_state.clicked_points = plotly_events(fig, key="my_key")
             st.session_state.phase_plane = fig
-            print(st.session_state.clicked_points)
 
     def initialize_variable_sliders():
         for var in st.session_state.variables:
-            # if var.step_size != 0 and var.slider is None:
-            print(var.letter)
             var.slider = col2.slider(f"Slider for {var.letter}",
                                      key=f"{var.letter}",
                                      min_value=var.min_value,
@@ -383,15 +350,11 @@ def app(flag):
                                      on_change=slider_change_callback,
                                      args=(var.letter)
                                      )
-            print(
-                "this is a var: " + str(var) + " with value " + str(var.letter) + " and numerical value " + str(
-                    var.slider))
 
-    # # initialize all session keys
-    # if 'dxdt' not in st.session_state:
-    #     st.session_state['dxdt'] = '-x'
-    # if 'dydt' not in st.session_state:
-    #     st.session_state['dydt'] = 'y'
+
+    ##########################################################
+    ######## DISPLAY THE APPLICATION ITSELF ############
+    ##########################################################
 
     # Setup screen
     col1, col2 = st.columns([1, 2])
@@ -401,6 +364,7 @@ def app(flag):
 
     # Setup widgets ------------------------------------------
 
+    # Import session state expander
     import_expander = st.expander(label='Import Session')
     with import_expander:
         st.write("Paste in a session state. Then, click 'import' to load the saved session")
@@ -409,18 +373,15 @@ def app(flag):
             text_input = st.text_area("Paste session state here")
             import_submit = import_form.form_submit_button("Import")
             if text_input is not None and import_submit is True:
-                # try:
-                dict_input = json.loads(text_input)
-                print("DICT INPUT IS " + str(dict_input))
-                print("TYPE OF DICT INPUT IS " + str(type(dict_input)))
-                import_session_state_callback(dict_input)
-                # except Exception as e:
-                #     print("EfRROR IN LOADING JSON" + str(e))
-                #     st.warning("Something went wrong converting your input to a dictionary")
+                try:
+                    dict_input = json.loads(text_input)
+                    import_session_state_callback(dict_input)
+                except Exception as e:
+                    print("EfRROR IN LOADING JSON" + str(e))
+                    st.warning("Something went wrong converting your input to a dictionary")
 
 
-
-
+    # User equation inputs
     dxdt_equation_input: str = col1.text_input("dx/dt = ", 'x', key="dxdt", on_change=text_input_callback)
     dydt_equation_input: str = col1.text_input("dy/dt = ", 'y', key="dydt", on_change=text_input_callback)
 
@@ -429,7 +390,6 @@ def app(flag):
 
     # Render plot
     col1.button("Render Plot", on_click=text_input_callback)
-
 
     # Add a variable form
     var_form_expander = col1.expander(label='Add a Variable')
@@ -442,46 +402,25 @@ def app(flag):
             var_step_size = st.number_input("Step Size (For Slider)",
                                             key='var_step_size')
             var_submit = st.form_submit_button("Submit Variable")
-            print("inside form var submit is " + str(var_submit))
-            print("hello i am here now")
             if var_letter is not None and var_submit is True:
                 st.session_state.variables.append(
                     v.Variable(var_letter, var_min_value, var_max_value, var_step_size))
                 st.session_state.variable_letters.append(var_letter)
 
-    # for var in st.session_state.variables:
-    #     # if var.step_size != 0 and var.slider is None:
-    #     print(var.letter)
-    #     var.slider = col2.slider(f"Slider for {var.letter}",
-    #                              key=f"{var.letter}",
-    #                              min_value=var.min_value,
-    #                              max_value=var.max_value,
-    #                              step=var.step_size,
-    #                              on_change=slider_change_callback,
-    #                              args=(var.letter)
-    #                              )
-    #     print(
-    #         "this is a var: " + str(var) + " with value " + str(var.letter) + " and numerical value " + str(var.slider))
-
     initialize_variable_sliders()
 
-    print("we are now here")
+    # Extra text for user experience
     col1.markdown("""---""")
     col1.markdown("""**Click on plot to draw solution curve. Or manually input initial conditions**""")
 
-    # export_dict = {key: val for key, val in st.session_state.items() if key in included_keys}
-    # print(str(export_dict))
-    print(str(st.session_state))
 
     # Initial Conditions Form --------------------------------
     initial_conditions_expander = col1.expander(label='Manual Initial Conditions')
     with initial_conditions_expander:
         ic_form = st.form(key='initial_conditions_form')
         with ic_form:
-            # form_col1, form_col2 = st.beta_columns(2)
             init_x = st.number_input("Initial X")
             init_y = st.number_input("Initial Y")
-            print(init_x)
             ic_submit = ic_form.form_submit_button("Submit IVP")
             if init_x is not None and init_y is not None and ic_submit is True:
                 manual_ivp_input_callback(init_x, init_y)
@@ -495,7 +434,6 @@ def app(flag):
         if submit:
             export_dict = {key: val for key, val in st.session_state.items() if key in included_keys}
             # Variables have to be serialized separately
-
             # Serialize exported keys into JSON
             serialized_string = ('{%s' % ', '.join(['"%s": "%s"' % (key, val) for key, val in export_dict.items()]))
             # Serializing a list of variables is more difficult, and is done manually here
@@ -541,18 +479,6 @@ def app(flag):
         tuning_col2.number_input("tMax", step=1, value=10, key='t_max', on_change=text_input_callback)
         tuning_col3.number_input("Max Step Size", step=.01, value=.1, key='step_max', on_change=text_input_callback)
 
-
+    # Streamlit does not support clicking on plotly plots as a valid event. Therefore, we use a "hack"
+    # This has to be the last line of code as well
     register_callback("my_key", click_plot_input_callback)
-
-    print("please no")
-    #
-    # def my_callback():
-    #     print("callback")
-    #
-    # if not 'my_key' in st.session_state:
-    #     print("this happened once")
-    #     register_callback("my_key", text_input_callback)
-
-    # fig2 = px.line(x=[1], y=[1])
-    # clicked_points = plotly_events(fig2, key="my_key")
-    # print(clicked_points)

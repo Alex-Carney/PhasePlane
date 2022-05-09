@@ -192,7 +192,6 @@ def runge_kutta_3(equation_system, time_vector: ndarray, seeds: ndarray, step_si
 
 def hard_code(pos_eqn, vel_eqn, domain, x_seed, v_seed, step_size):
     domain_length: int = len(domain)
-    print(domain_length)
     x = np.zeros(domain_length)
     v = np.zeros(domain_length)
     x[0] = x_seed
@@ -202,8 +201,8 @@ def hard_code(pos_eqn, vel_eqn, domain, x_seed, v_seed, step_size):
     w0 = 3
 
     for i in range(1, domain_length):
-        # print(str(vel_eqn(x[i-1], v[i-1])) + " VERSUS " + str((-2 * z * w0 * v[i-1]) - (x[i-1] * w0 ** 2)))
-        # print("FOR SIMPLE" + str(pos_eqn(v[i-1])) + " VERSUS " + str(v[i-1]))
+
+
 
         IGNORE = 0
         v[i] = v[i - 1] + step_size * vel_eqn(x[i - 1], v[i - 1])

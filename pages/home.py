@@ -1,5 +1,8 @@
 import streamlit as st
 
+"""
+The home page is a static image with some text. 
+"""
 
 def app(flag):
     # Only render the background image for home page
