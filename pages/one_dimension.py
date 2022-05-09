@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from numpy import ndarray
 from sympy import lambdify, symbols
 from util import carney_diff_eqs as ode44
@@ -13,7 +12,6 @@ from streamlit_plotly_events import plotly_events
 from common.components_callbacks import register_callback
 import json
 from common import variable as v
-import scipy.integrate as si
 
 """
 This is the application for one dimensional systems, with a single differential equation. 

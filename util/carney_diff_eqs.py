@@ -1,8 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from numpy import ndarray
-
-import datetime
 
 
 
@@ -213,76 +210,77 @@ def hard_code(pos_eqn, vel_eqn, domain, x_seed, v_seed, step_size):
 
 
 if __name__ == '__main__':
+    print("main")
 
-    t_step = .1
-    h = .1
-    time = np.r_[0:10:t_step]
-
-    dxdt1 = lambda x, t: t
-
-
-    dxdt = lambda x, y, t: -y
-    dydt = lambda x, y, t: x
-
-    eqn_system = np.array([dxdt, dydt])
-
-    initial = np.array([1, 1])
-
-    #outExact = runge_kutta_second(eqn_system, time, initial, h)
-
-    begin_time = datetime.datetime.now()
-    outTest = runge_kutta_any_order(eqn_system, time, initial, h)
-    print("ELAPSED TIME FOR UPGRADE " + str(datetime.datetime.now() - begin_time))
-
-    begin_time = datetime.datetime.now()
-    outTestTwo = runge_kutta_second(eqn_system, time, initial, h)
-    print("ELAPSED TIME FOR HARD CODE " + str(datetime.datetime.now() - begin_time))
-    # plt.plot(outExact[0, :], outExact[1, :])
-    plt.plot(outTest[0, :], outTest[1, :])
-    plt.plot(outTestTwo[0, :], outTestTwo[1, :])
-    plt.show()
-
-
-
-
-
-    # equation = lambda x, y: -y
+    # t_step = .1
+    # h = .1
+    # time = np.r_[0:10:t_step]
     #
-    # z = .25
-    # w0 = 10.917
+    # dxdt1 = lambda x, t: t
     #
-    # time_step = (1 / w0) * .001
-    # domain = np.r_[0:3: time_step]
-    # actual = 1 * np.exp(-domain)
     #
-    # equation1 = lambda x, v: (-2 * z * w0 * v) - (x * w0 ** 2)
-    # equation2 = lambda x, v: v
+    # dxdt = lambda x, y, t: -y
+    # dydt = lambda x, y, t: x
     #
-    # equation_system = np.array([equation2, equation1])
+    # eqn_system = np.array([dxdt, dydt])
     #
-    # # guessed_underdamped = runge_kutta_3(equation_system, domain, np.array([0, 0]), .1)
+    # initial = np.array([1, 1])
     #
-    # # guessed_underdamped, _ = hard_code(equation2, equation1, domain, 5, 0, .1)
+    # #outExact = runge_kutta_second(eqn_system, time, initial, h)
     #
-    # # guessed_underdamped = runge_kutta_3(equation_system, domain, np.array([5, 0]), .1)
-    # guessed_underdamped = runge_kutta_2(equation_system, domain, np.array([1, 0]), time_step)
-    # # guessed_underdamped = runge_kutta_3([equation1, equation2], domain, np.array([5, 0]), .1)
-    # # better_guess = runge_kutta_3(equation_system, domain, np.array([1, 0]), time_step)
+    # begin_time = datetime.datetime.now()
+    # outTest = runge_kutta_any_order(eqn_system, time, initial, h)
+    # print("ELAPSED TIME FOR UPGRADE " + str(datetime.datetime.now() - begin_time))
     #
-    # A = 5
-    # equation1_td = lambda x, v, t: (-2 * z * w0 * v) - (x * w0 ** 2) + (A * t)
-    # equation2_td = lambda x, v, t: v
+    # begin_time = datetime.datetime.now()
+    # outTestTwo = runge_kutta_second(eqn_system, time, initial, h)
+    # print("ELAPSED TIME FOR HARD CODE " + str(datetime.datetime.now() - begin_time))
+    # # plt.plot(outExact[0, :], outExact[1, :])
+    # plt.plot(outTest[0, :], outTest[1, :])
+    # plt.plot(outTestTwo[0, :], outTestTwo[1, :])
+    # plt.show()
     #
-    # new_attempt_guess = runge_kutta_second(np.array([equation2_td, equation1_td]), domain, np.array([1, 0]), time_step)
-
-    # THIRD ORDER DIFF EQ TEST WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-    eqn1 = lambda x, v, a, t: v
-    eqn2 = lambda x, v, a, t: a
-    eqn3 = lambda x, v, a, t: x
-
-    t_step = .01
-    time = np.r_[0:5:t_step]
-    bruh = runge_kutta_any_order(np.array([eqn1, eqn2, eqn3]), time, np.array([1, 1, 1]), t_step)
-    plt.plot(time, np.exp(time))
-    plt.plot(time, bruh[0, :], 'r--')
-    plt.show()
+    #
+    #
+    #
+    #
+    # # equation = lambda x, y: -y
+    # #
+    # # z = .25
+    # # w0 = 10.917
+    # #
+    # # time_step = (1 / w0) * .001
+    # # domain = np.r_[0:3: time_step]
+    # # actual = 1 * np.exp(-domain)
+    # #
+    # # equation1 = lambda x, v: (-2 * z * w0 * v) - (x * w0 ** 2)
+    # # equation2 = lambda x, v: v
+    # #
+    # # equation_system = np.array([equation2, equation1])
+    # #
+    # # # guessed_underdamped = runge_kutta_3(equation_system, domain, np.array([0, 0]), .1)
+    # #
+    # # # guessed_underdamped, _ = hard_code(equation2, equation1, domain, 5, 0, .1)
+    # #
+    # # # guessed_underdamped = runge_kutta_3(equation_system, domain, np.array([5, 0]), .1)
+    # # guessed_underdamped = runge_kutta_2(equation_system, domain, np.array([1, 0]), time_step)
+    # # # guessed_underdamped = runge_kutta_3([equation1, equation2], domain, np.array([5, 0]), .1)
+    # # # better_guess = runge_kutta_3(equation_system, domain, np.array([1, 0]), time_step)
+    # #
+    # # A = 5
+    # # equation1_td = lambda x, v, t: (-2 * z * w0 * v) - (x * w0 ** 2) + (A * t)
+    # # equation2_td = lambda x, v, t: v
+    # #
+    # # new_attempt_guess = runge_kutta_second(np.array([equation2_td, equation1_td]), domain, np.array([1, 0]), time_step)
+    #
+    # # THIRD ORDER DIFF EQ TEST WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+    # eqn1 = lambda x, v, a, t: v
+    # eqn2 = lambda x, v, a, t: a
+    # eqn3 = lambda x, v, a, t: x
+    #
+    # t_step = .01
+    # time = np.r_[0:5:t_step]
+    # bruh = runge_kutta_any_order(np.array([eqn1, eqn2, eqn3]), time, np.array([1, 1, 1]), t_step)
+    # plt.plot(time, np.exp(time))
+    # plt.plot(time, bruh[0, :], 'r--')
+    # plt.show()

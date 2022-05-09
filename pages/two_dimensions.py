@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from numpy import ndarray
 from sympy import lambdify, symbols
 from util import carney_diff_eqs as ode44
