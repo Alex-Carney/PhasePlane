@@ -326,7 +326,7 @@ def app(flag):
     import_expander = st.expander(label='Import Session')
     with import_expander:
         st.write("Paste in a session state. Then, click 'import' to load the saved session")
-        import_form = st.form(key='import_state_form')
+        import_form = st.form(key='import_state_form', clear_on_submit=True)
         with import_form:
             text_input = st.text_area("Paste session state here")
             import_submit = import_form.form_submit_button("Import")
@@ -355,11 +355,20 @@ def app(flag):
             var_letter = st.text_input("Variable Letter", key='var_letter')
             var_min_value = st.number_input("Minimum Allowed Value", key='var_min_value')
             var_max_value = st.number_input("Maximum Allowed Value", key='var_max_value')
-            var_step_size = st.number_input("Step Size (For Slider)", key='var_step_size') #TODO: Default value not zero
+            var_step_size = st.number_input("Step Size (For Slider)", key='var_step_size')
             var_submit = st.form_submit_button("Submit Variable")
-            if var_letter is not None and var_submit is True:
-                st.session_state.variables.append(v.Variable(var_letter, var_min_value, var_max_value, var_step_size))
-                st.session_state.variable_letters.append(var_letter)
+            if var_letter is not None and var_letter != "" and var_submit is True:
+                duplicate_key: bool = var_letter in st.session_state.variable_letters
+                invalid_step: bool = var_step_size == 0
+                invalid_range: bool = var_min_value >= var_max_value
+                if duplicate_key or invalid_range or invalid_step:
+                    st.warning("Invalid entry. Step cannot be 0. Min value cannot be greater than max,"
+                               "cannot make duplicate variables. You did duplicate key error " + str(duplicate_key)
+                               + " invalid step error " + str(invalid_step) + " invalid range error " + str(invalid_range)
+                               + " if you don't understand why, refresh the page")
+                else:
+                    st.session_state.variables.append(v.Variable(var_letter, var_min_value, var_max_value, var_step_size))
+                    st.session_state.variable_letters.append(var_letter)
 
 
     initialize_variable_sliders()
